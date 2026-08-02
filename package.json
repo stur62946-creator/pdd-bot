@@ -7,6 +7,6 @@
     "start": "node bot.js"
   },
   "dependencies": {
-    "@maxhub/max-bot-api": "latest"
+    "axios": "^1.7.7"
   }
 }
