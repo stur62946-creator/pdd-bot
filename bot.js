@@ -12,7 +12,6 @@ async function sendMessage(peerId, text) {
   });
 }
 
-// Создаём сервер для Callback
 const server = http.createServer((req, res) => {
   let body = '';
   req.on('data', chunk => body += chunk);
@@ -25,15 +24,15 @@ const server = http.createServer((req, res) => {
         const peerId = event.message?.peer_id;
 
         if (text === '/start') {
-          await sendMessage(peerId, '✅ Бот получил команду /start и ответил!');
+          await sendMessage(peerId, '✅ Бот работает! Команда получена.');
           console.log('✅ Ответил на /start');
         }
       }
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true }));
-    } catch (err) {
-      console.error('Ошибка:', err.message);
+      res.writeHead(200);
+      res.end('ok');
+    } catch (e) {
+      console.error(e);
       res.writeHead(200);
       res.end('ok');
     }
@@ -42,5 +41,5 @@ const server = http.createServer((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🤖 Бот запущен на порту ${PORT}. Жду команду /start...`);
+  console.log(`🤖 Бот запущен на порту ${PORT}. Жду /start...`);
 });
