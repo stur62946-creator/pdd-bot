@@ -1,7 +1,7 @@
 const https = require('https');
 const http = require('http');
 
-const BOT_TOKEN = 'f9LHodD0cOJWW_Wi94tgIfFJ6uJ0vCZ8dTFuyhUOJmAHOrqa2ZlYc_4wEU23ph4892Qncus7SmCLV2XNmpHU';
+const BOT_TOKEN = 'f9LHodD0cOKXMHP37xldc4aOnIDrcWurLnRAdVE8lw6xo_7If_pFn9UDZ4LUxEouW9xZORdBt-jMoJFdlPvJ';
 
 // Максимально простой клиент для API
 function maxRequest(path, body, callback) {
