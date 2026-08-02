@@ -1,44 +1,23 @@
-const axios = require('axios');
+const { MaxBotApiClient } = require('@max.messenger/bot-api');
 
-const BOT_TOKEN = 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
-const API_URL = 'https://api.max.ru/messages.send';
+const BOT_TOKEN = process.env.MAX_BOT_TOKEN || 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
 
-async function sendMessage(peerId, text) {
-  await axios.post(API_URL, {
-    peer_id: peerId,
-    text: text
-  }, {
-    headers: { Authorization: `Bearer ${BOT_TOKEN}` }
-  });
-}
+const client = new MaxBotApiClient({
+  token: BOT_TOKEN,
+  longPoll: true // Включаем режим Long Poll
+});
 
-async function startLongPoll() {
-  console.log('⏳ Бот запущен в режиме Long Poll. Жду /start...');
-  
-  while (true) {
-    try {
-      const response = await axios.get('https://api.max.ru/longpoll', {
-        headers: { Authorization: `Bearer ${BOT_TOKEN}` }
-      });
+client.on('message_new', async (event) => {
+  const text = event.message?.text?.toLowerCase();
+  const peerId = event.message?.peerId;
 
-      if (response.data && response.data.events) {
-        for (const event of response.data.events) {
-          if (event.type === 'message_new') {
-            const text = event.message?.text?.toLowerCase();
-            const peerId = event.message?.peer_id;
-
-            if (text === '/start') {
-              await sendMessage(peerId, '✅ Бот работает! Команда /start получена.');
-              console.log('✅ Ответил на /start');
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error('❌ Ошибка Long Poll:', err.message);
-    }
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  if (text === '/start') {
+    await client.messages.send({
+      peerId: peerId,
+      text: '✅ Бот работает! Команда /start получена.'
+    });
+    console.log('✅ Ответил на /start');
   }
-}
+});
 
-startLongPoll();
+console.log('🤖 Бот запущен (официальный SDK). Жду /start...');
