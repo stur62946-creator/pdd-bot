@@ -1,0 +1,12 @@
+{
+  "name": "pdd-quest-bot",
+  "version": "1.0.0",
+  "description": "Бот для опросов в канале Max",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "max-bot-api-client-ts": "^1.0.0"
+  }
+}

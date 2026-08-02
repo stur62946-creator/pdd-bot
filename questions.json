@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Road_sign_3.27.svg/1200px-Road_sign_3.27.svg.png",
+    "text": "Что означает знак 3.27?",
+    "options": ["Остановка запрещена", "Стоянка запрещена", "Движение запрещено", "Пешеходный переход"],
+    "correct": 0
+  }
+]
