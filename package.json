@@ -7,6 +7,6 @@
     "start": "node bot.js"
   },
   "dependencies": {
-    "max-bot-api-client-ts": "^1.0.0"
+    "axios": "^1.6.0"
   }
 }
