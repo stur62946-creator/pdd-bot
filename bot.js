@@ -1,45 +1,35 @@
-const axios = require('axios');
 const http = require('http');
+const axios = require('axios');
 
 const BOT_TOKEN = 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
 
-async function sendMessage(peerId, text) {
-  await axios.post('https://api.max.ru/messages.send', {
-    peer_id: peerId,
-    text: text
-  }, {
-    headers: { Authorization: `Bearer ${BOT_TOKEN}` }
-  });
-}
-
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   let body = '';
-  req.on('data', chunk => body += chunk);
-  req.on('end', async () => {
-    try {
-      const event = JSON.parse(body);
+  for await (const chunk of req) body += chunk;
+  
+  try {
+    const event = JSON.parse(body);
+    console.log('📩 Событие получено:', event.type);
 
-      if (event.type === 'message_new') {
-        const text = event.message?.text?.toLowerCase();
-        const peerId = event.message?.peer_id;
-
-        if (text === '/start') {
-          await sendMessage(peerId, '✅ Бот работает! Команда получена.');
-          console.log('✅ Ответил на /start');
-        }
-      }
-
-      res.writeHead(200);
-      res.end('ok');
-    } catch (e) {
-      console.error(e);
-      res.writeHead(200);
-      res.end('ok');
+    if (event.type === 'message_new' && event.message?.text?.toLowerCase() === '/start') {
+      const peerId = event.message.peer_id;
+      await axios.post('https://api.max.ru/messages.send', {
+        peer_id: peerId,
+        text: '✅ Бот работает! Привет!'
+      }, {
+        headers: { Authorization: `Bearer ${BOT_TOKEN}` }
+      });
+      console.log('✅ Ответ отправлен на /start');
     }
-  });
+
+    res.writeHead(200);
+    res.end('ok');
+  } catch (e) {
+    console.error('❌ Ошибка:', e.message);
+    res.writeHead(200);
+    res.end('ok');
+  }
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🤖 Бот запущен на порту ${PORT}. Жду /start...`);
-});
+server.listen(PORT, () => console.log(`🤖 Бот готов на порту ${PORT} и ждёт /start...`));
