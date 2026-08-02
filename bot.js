@@ -1,4 +1,5 @@
 const axios = require('axios');
+const http = require('http');
 
 // ============================================================
 // Твои данные
@@ -6,7 +7,6 @@ const axios = require('axios');
 const BOT_TOKEN = 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
 const CHANNEL_ID = '77483436379527';
 const API_URL = 'https://api.max.ru/messages.send';
-const LONG_POLL_URL = 'https://api.max.ru/longpoll';
 
 // Вопрос для теста
 const questions = [
@@ -44,62 +44,53 @@ function createKeyboard(options) {
   };
 }
 
-// === LONG POLL (Бот слушает сообщения) ===
-async function startLongPoll() {
-  console.log('⏳ Подключаемся к Long Poll...');
-  
-  while (true) {
+// === HTTP-сервер для Callback API ===
+const server = http.createServer(async (req, res) => {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', async () => {
     try {
-      // Получаем события из Long Poll
-      const response = await axios.get(LONG_POLL_URL, {
-        headers: { Authorization: `Bearer ${BOT_TOKEN}` }
-      });
+      const event = JSON.parse(body);
 
-      if (response.data && response.data.events) {
-        for (const event of response.data.events) {
-          // Если это новое сообщение
-          if (event.type === 'message_new') {
-            const text = event.message?.text?.toLowerCase();
-            const peerId = event.message?.peer_id;
+      // Если это новое сообщение
+      if (event.type === 'message_new') {
+        const text = event.message?.text?.toLowerCase();
+        const peerId = event.message?.peer_id;
 
-            // Если написали /start
-            if (text === '/start') {
-              const q = questions[0];
-              const keyboard = createKeyboard(q.options);
+        if (text === '/start') {
+          const q = questions[0];
+          const keyboard = createKeyboard(q.options);
 
-              // 1. Отправляем пост в канал
-              await sendMessage(CHANNEL_ID, q.text, keyboard, q.image);
-
-              // 2. Отправляем ответ админу в ЛС
-              await sendMessage(peerId, '✅ Пост с опросом отправлен в канал!');
-            }
-          }
-
-          // Если это нажатие на кнопку
-          if (event.type === 'message_payload') {
-            const payload = JSON.parse(event.message?.payload || '{}');
-            const peerId = event.message?.peer_id;
-            const q = questions[0];
-            
-            const isCorrect = payload.answer === q.correct;
-            const responseText = isCorrect 
-              ? '✅ Верно! Молодец!' 
-              : `❌ Неверно. Правильный ответ: ${q.options[q.correct]}`;
-
-            // Отправляем ответ в ЛС тому, кто нажал
-            await sendMessage(peerId, responseText);
-          }
+          await sendMessage(CHANNEL_ID, q.text, keyboard, q.image);
+          await sendMessage(peerId, '✅ Пост с опросом отправлен в канал!');
         }
       }
-    } catch (err) {
-      console.error('❌ Ошибка Long Poll:', err.message);
-    }
-    
-    // Небольшая задержка, чтобы не нагружать сервер
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-}
 
-// Запускаем бота
-console.log('🤖 Бот запущен! Жду команду /start...');
-startLongPoll();
+      // Если это нажатие на кнопку
+      if (event.type === 'message_payload') {
+        const payload = JSON.parse(event.message?.payload || '{}');
+        const peerId = event.message?.peer_id;
+        const q = questions[0];
+        
+        const isCorrect = payload.answer === q.correct;
+        const responseText = isCorrect 
+          ? '✅ Верно! Молодец!' 
+          : `❌ Неверно. Правильный ответ: ${q.options[q.correct]}`;
+
+        await sendMessage(peerId, responseText);
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    } catch (err) {
+      console.error('❌ Ошибка обработки запроса:', err);
+      res.writeHead(200);
+      res.end('ok');
+    }
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🤖 Бот запущен на порту ${PORT}. Жду команду /start...`);
+});
