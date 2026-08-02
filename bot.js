@@ -1,23 +1,15 @@
-const { MaxBotApiClient } = require('@max.messenger/bot-api');
+const { Bot } = require('@maxhub/max-bot-api');
 
-const BOT_TOKEN = process.env.MAX_BOT_TOKEN || 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
+const BOT_TOKEN = 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
 
-const client = new MaxBotApiClient({
-  token: BOT_TOKEN,
-  longPoll: true // Включаем режим Long Poll
+const bot = new Bot(BOT_TOKEN);
+
+// Обработчик команды '/start'
+bot.command('start', (ctx) => {
+  ctx.reply('✅ Бот работает! Привет!');
 });
 
-client.on('message_new', async (event) => {
-  const text = event.message?.text?.toLowerCase();
-  const peerId = event.message?.peerId;
+// Запускаем бота
+bot.start();
 
-  if (text === '/start') {
-    await client.messages.send({
-      peerId: peerId,
-      text: '✅ Бот работает! Команда /start получена.'
-    });
-    console.log('✅ Ответил на /start');
-  }
-});
-
-console.log('🤖 Бот запущен (официальный SDK). Жду /start...');
+console.log('🤖 Бот запущен на официальном SDK. Жду /start...');
