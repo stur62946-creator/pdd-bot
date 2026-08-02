@@ -1,59 +1,46 @@
 const axios = require('axios');
-const https = require('https');
+const http = require('http');
 
 const BOT_TOKEN = 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
 
-// Создаём агент с отключённой проверкой SSL (обходим ошибку сертификата)
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false
-});
-
 async function sendMessage(peerId, text) {
-  try {
-    await axios.post('https://api.max.ru/messages.send', {
-      peer_id: peerId,
-      text: text
-    }, {
-      headers: { Authorization: `Bearer ${BOT_TOKEN}` },
-      httpsAgent
-    });
-    console.log('✅ Сообщение отправлено');
-  } catch (e) {
-    console.error('❌ Ошибка отправки:', e.message);
-  }
+  await axios.post('https://api.max.ru/messages.send', {
+    peer_id: peerId,
+    text: text
+  }, {
+    headers: { Authorization: `Bearer ${BOT_TOKEN}` }
+  });
 }
 
-async function startLongPoll() {
-  console.log('🤖 Бот запущен. Жду команду /start...');
-  
-  while (true) {
+// Создаём сервер для Callback
+const server = http.createServer((req, res) => {
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', async () => {
     try {
-      const response = await axios.get('https://api.max.ru/longpoll', {
-        headers: { Authorization: `Bearer ${BOT_TOKEN}` },
-        httpsAgent,
-        timeout: 5000
-      });
+      const event = JSON.parse(body);
 
-      if (response.data && response.data.events) {
-        for (const event of response.data.events) {
-          if (event.type === 'message_new') {
-            const text = event.message?.text?.toLowerCase();
-            const peerId = event.message?.peer_id;
+      if (event.type === 'message_new') {
+        const text = event.message?.text?.toLowerCase();
+        const peerId = event.message?.peer_id;
 
-            if (text === '/start') {
-              await sendMessage(peerId, '✅ Бот работает! Команда /start получена.');
-            }
-          }
+        if (text === '/start') {
+          await sendMessage(peerId, '✅ Бот получил команду /start и ответил!');
+          console.log('✅ Ответил на /start');
         }
       }
-    } catch (err) {
-      // Игнорируем 404 (нормально для Long Poll)
-      if (err.response?.status !== 404) {
-        console.error('⚠️ Ошибка Long Poll:', err.message);
-      }
-    }
-    await new Promise(r => setTimeout(r, 2000));
-  }
-}
 
-startLongPoll();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    } catch (err) {
+      console.error('Ошибка:', err.message);
+      res.writeHead(200);
+      res.end('ok');
+    }
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🤖 Бот запущен на порту ${PORT}. Жду команду /start...`);
+});
