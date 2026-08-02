@@ -1,4 +1,4 @@
-const { MaxBotApiClient } = require('max-bot-api-client-ts');
+const { MaxBotApiClient } = require('@max.messenger/bot-api');
 const fs = require('fs');
 const path = require('path');
 
