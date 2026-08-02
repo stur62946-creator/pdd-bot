@@ -1,7 +1,6 @@
 const https = require('https');
 
 const BOT_TOKEN = process.env.BOT_TOKEN || process.env.MAX_BOT_TOKEN;
-const CHANNEL_ID = '77483436379527';
 
 // Запрос к API MAX
 function callAPI(method, data) {
@@ -29,31 +28,39 @@ function callAPI(method, data) {
   });
 }
 
-// Таймер для проверки входящих сообщений (Long Poll)
+// Таймер для проверки входящих сообщений
 function checkMessages() {
-  callAPI('updates', {}) // 'updates' — метод для получения новых событий
+  callAPI('updates', {})
     .then((data) => {
       try {
         const events = JSON.parse(data);
         if (events && events.length) {
           for (const ev of events) {
-            if (ev.type === 'message_created') {
+            // Слушаем только личные сообщения (не канал)
+            if (ev.type === 'message_created' && ev.message?.peer_type === 'user') {
               const text = ev.message?.text?.toLowerCase();
-              const peerId = ev.message?.recipient?.chat_id || ev.message?.sender?.user_id;
+              const peerId = ev.message?.sender?.user_id;
               if (text === '/start' && peerId) {
                 callAPI('messages.send', {
                   peer_id: peerId,
-                  text: '✅ Бот работает! Это максимум.',
+                  text: '✅ Бот работает в ЛС! Команда /start получена.',
                 });
+                console.log('✅ Ответил на /start в ЛС');
               }
             }
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('Ошибка парсинга:', e.message);
+      }
     })
-    .catch(() => {});
+    .catch((err) => {
+      if (!err.message.includes('ECONNREFUSED')) {
+        console.error('⚠️ Ошибка запроса:', err.message);
+      }
+    });
 }
 
-// Держим процесс живым и проверяем каждые 3 секунды
+// Проверяем каждые 3 секунды
 setInterval(checkMessages, 3000);
-console.log('🤖 Бот работает в режиме API (без Callback)');
+console.log('🤖 Бот запущен (ЛС). Жду /start в личных сообщениях...');
