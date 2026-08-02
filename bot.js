@@ -1,8 +1,8 @@
 const axios = require('axios');
 
-// Твои данные
-const BOT_TOKEN = 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
-const CHANNEL_ID = '77483436379527';
+// === Берём данные из переменных окружения (не хардкод!) ===
+const BOT_TOKEN = process.env.MAX_BOT_TOKEN || process.env.MAX_TOKEN;
+const CHANNEL_ID = '77483436379527';  // Твой ID канала
 const API_URL = 'https://api.max.ru/messages.send';
 
 // Тестовый вопрос
@@ -27,11 +27,10 @@ async function sendMessage(peerId, text, keyboard = null, attachment = null) {
   });
 }
 
-// Глобальный обработчик события (вместо http-сервера)
-// Важно: на bothost.ru этот код запускается как обычный процесс,
-// а события приходят через вызов этого модуля
+// Обработчик событий (бот слушает)
 process.on('message', async (event) => {
   try {
+    // Если это команда /start от админа
     if (event.type === 'message_new') {
       const text = event.message?.text?.toLowerCase();
       const peerId = event.message?.peer_id;
@@ -44,11 +43,14 @@ process.on('message', async (event) => {
             { type: 'text', label: opt, payload: JSON.stringify({ answer: index }) }
           ])
         };
+        // Отправляем в канал
         await sendMessage(CHANNEL_ID, q.text, keyboard, q.image);
+        // Отправляем подтверждение админу
         await sendMessage(peerId, '✅ Пост отправлен в канал!');
       }
     }
 
+    // Если это нажатие на кнопку
     if (event.type === 'message_payload') {
       const payload = JSON.parse(event.message?.payload || '{}');
       const q = questions[0];
@@ -57,10 +59,10 @@ process.on('message', async (event) => {
       await sendMessage(event.message?.peer_id, resp);
     }
   } catch (err) {
-    console.error('Ошибка обработки:', err.message);
+    console.error('❌ Ошибка:', err.message);
   }
 });
 
-// Просто держим процесс живым
-console.log('🤖 Бот запущен в режиме Callback...');
-setInterval(() => {}, 1 << 30); // бесконечный таймер, чтобы процесс не завершился
+// Держим процесс живым
+console.log('🤖 Бот запущен и слушает команды...');
+setInterval(() => {}, 1 << 30);
