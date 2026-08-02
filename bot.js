@@ -1,10 +1,8 @@
 const axios = require('axios');
 
-// Твои данные
 const BOT_TOKEN = 'f9LHodD0cOKD36Dt6aXPSyuvzh1cr95O6kcyGcB0AMiHHxtKZj2Fy_q6xF8uUvCayTgFzpiS0piKKGxdmFGf';
 const API_URL = 'https://api.max.ru/messages.send';
 
-// Функция отправки сообщения
 async function sendMessage(peerId, text) {
   await axios.post(API_URL, {
     peer_id: peerId,
@@ -14,9 +12,8 @@ async function sendMessage(peerId, text) {
   });
 }
 
-// Long Poll: слушаем входящие сообщения
 async function startLongPoll() {
-  console.log('⏳ Бот запущен, слушаю команду /start...');
+  console.log('⏳ Бот запущен в режиме Long Poll. Жду /start...');
   
   while (true) {
     try {
@@ -31,8 +28,8 @@ async function startLongPoll() {
             const peerId = event.message?.peer_id;
 
             if (text === '/start') {
-              await sendMessage(peerId, 'Привет! Я твой тестовый бот. Команда /start работает!');
-              console.log('✅ Ответил на команду /start');
+              await sendMessage(peerId, '✅ Бот работает! Команда /start получена.');
+              console.log('✅ Ответил на /start');
             }
           }
         }
@@ -40,11 +37,8 @@ async function startLongPoll() {
     } catch (err) {
       console.error('❌ Ошибка Long Poll:', err.message);
     }
-    
-    // Небольшая задержка
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 }
 
-// Запускаем бота
 startLongPoll();
